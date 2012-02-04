@@ -81,12 +81,12 @@ if __name__ == "__main__":
 		print "Missing gitdir parameter, and no GIT_DIR environment variable was available either."
 		sys.exit(1)
 		
-	class Issue(ActiveResource)
+	class Issue(ActiveResource):
 	 	_site = options['url']	
-		_username = options['username']
+		_user = options['username']
 		_password = options['password']
 		
 	repo = git.Repo(gitDir)
 	for commit in commits():
 		oldRev, newRev, ref = commit
-		checkCommit(newRev, IssueCls)
+		checkCommit(newRev, Issue)
