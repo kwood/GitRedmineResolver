@@ -74,11 +74,11 @@ if __name__ == "__main__":
 	parser.add_argument('url', type=str, help="URL to the Redmine instance.")
 	parser.add_argument('username', type=str, help="The Redmine username to log in with.  Needs permissions to resolve and comment on issues.")
 	parser.add_argument('password', type=str, help="The Redmine password to log in with.")
-	parser.add_argument('--gitdir', type=str, help="Path to the git repo.  This is optional if GIT_DIR is defined in the environment")
+	parser.add_argument('--git-dir', type=str, help="Path to the git repo.  This is optional if GIT_DIR is defined in the environment")
 	options = vars(parser.parse_args())
-	gitDir = options.get('gitdir',os.environ.get('GIT_DIR'))
+	gitDir = options.get('git-dir',os.environ.get('GIT_DIR'))
 	if not gitDir:
-		print "Missing gitdir parameter, and no GIT_DIR environment variable was available either."
+		print "Missing git-dir parameter, and no GIT_DIR environment variable was available either."
 		sys.exit(1)
 		
 	class Issue(ActiveResource):
