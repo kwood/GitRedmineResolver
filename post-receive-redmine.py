@@ -31,10 +31,6 @@ import sys
 regex = re.compile(restring, re.I)
 
 
-class Issue(ActiveResource):
-   pass
-
-
 # This generator reads lines from SDTIN and returns them as 3-item lists
 #   Example line from stdin:
 #   0a3bf385b261cb71e176ef758c37e94639901e2d 9d3a264654c1b26f4111276d42a83a2ac4626106 refs/heads/master
@@ -57,7 +53,7 @@ def handleMatchingIssue(issue, commit):
 	issue.save()
 
 
-def checkCommit(rev):
+def checkCommit(rev,IssueCls):
 	""" Checks all the lines in a commit for strings matching our regex"""
 	commit = repo.commit(newRev)
 	for line in commit.message.split("\n"):
@@ -84,10 +80,13 @@ if __name__ == "__main__":
 	if not gitDir:
 		print "Missing gitdir parameter, and no GIT_DIR environment variable was available either."
 		sys.exit(1)
-	Issue._site = options['url']	
-	Issue._username = options['username']
-	Issue._password = options['password']
+		
+	class Issue(ActiveResource)
+	 	_site = options['url']	
+		_username = options['username']
+		_password = options['password']
+		
 	repo = git.Repo(gitDir)
 	for commit in commits():
 		oldRev, newRev, ref = commit
-		checkCommit(newRev)
+		checkCommit(newRev, IssueCls)
