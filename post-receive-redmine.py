@@ -22,7 +22,6 @@ import os
 # XXX Figure out how to pass an API key to ActiveResource instead of login
 
 restring = r'(resolves|resolved|fixes|fixed)? ?(issue|task|feature|bug)? ?([#\d, ]+)'
-gitDir = os.environ["GIT_DIR"]
 
 from pyactiveresource.activeresource import ActiveResource
 import git
