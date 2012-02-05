@@ -21,7 +21,7 @@ Legal
 import os
 # XXX Figure out how to pass an API key to ActiveResource instead of login
 
-restring = r'(resolves|resolved|fixes|fixed)? ?(issue|task|feature|bug)? ?([#\d, ]+)'
+restring = r'(resolves|resolved|fixes|fixed)? ?(issue|task|feature|bug)?s? ?([#\d, ]+)'
 
 from pyactiveresource.activeresource import ActiveResource
 import git
@@ -71,10 +71,14 @@ def checkCommit(rev,IssueCls):
 if __name__ == "__main__":
 	import argparse
 	parser = argparse.ArgumentParser(description="Check commits for resolved Redmine issues.")
-	parser.add_argument('url', type=str, help="URL to the Redmine instance.")
-	parser.add_argument('username', type=str, help="The Redmine username to log in with.  Needs permissions to resolve and comment on issues.")
-	parser.add_argument('password', type=str, help="The Redmine password to log in with.")
-	parser.add_argument('--git-dir', type=str, help="Path to the git repo.  This is optional if GIT_DIR is defined in the environment")
+	parser.add_argument('url', type=str, 
+						help="URL to the Redmine instance.")
+	parser.add_argument('username', type=str, 
+						help="The Redmine username to log in with.  Needs permissions to resolve and comment on issues.")
+	parser.add_argument('password', type=str, 
+						help="The Redmine password to log in with.")
+	parser.add_argument('--git-dir', type=str, 
+						help="Path to the git repo.  This is optional if GIT_DIR is defined in the environment")
 	options = vars(parser.parse_args())
 	gitDir = options.get('git-dir',os.environ.get('GIT_DIR'))
 	if not gitDir:
