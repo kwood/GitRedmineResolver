@@ -21,7 +21,7 @@ Legal
 import os
 # XXX Figure out how to pass an API key to ActiveResource instead of login
 
-restring = r'(resolves|resolved|fixes|fixed)? ?(issue|task|feature|bug)?s? ?([#\d, ]+)'
+restring = r'(resolves|resolved|fixes|fixed) ?(issue|task|feature|bug)?s? ?([#\d, ]+)'
 
 from pyactiveresource.activeresource import ActiveResource
 import git
@@ -55,6 +55,9 @@ def handleMatchingIssue(issue, commit):
 
 def checkCommit(rev,IssueCls):
 	""" Checks all the lines in a commit for strings matching our regex"""
+	if rev == 40 * "0":
+		# Deleting a ref...
+		return
 	commit = repo.commit(newRev)
 	for line in commit.message.split("\n"):
 		match = regex.match(line)
