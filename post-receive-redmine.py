@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Description
   This script will look for git commits that contain a 
@@ -11,8 +12,8 @@ Description
   provided that the environment and stdin make it in.
 
 Dependencies
-  PyActiveResource: easy_install pyactiveresource
-  GitPython: easy_install gitpython
+  PyActiveResource: pip install pyactiveresource
+  GitPython: pip install gitpython
 
 Legal
   Copyright 2012 Kevin Wood <kevin@guidebook.com>
@@ -52,6 +53,20 @@ def handleMatchingIssue(issue, commit):
 	issue.status_id = 3 # Set to resolved.
 	issue.save()
 
+def processMessage(message, IssueCls, dryRun=False):
+	for line in message.split("\n"):
+		match = regex.search(line)
+		if match:
+			status = match.group(1)
+			numbers = match.group(3)
+			# Fetch a list of issues from the regex and clean them up
+			issueNumbers = [num for num in numbers.replace("#","").replace(" ",",").split(",") if num]
+			for issueNumber in issueNumbers:
+				issue = IssueCls.find(issueNumber)
+				if dryRun and issue:
+					print "Matched!"
+				if issue and not dryRun:
+					handleMatchingIssue(issue, commit)
 
 def checkCommit(rev,IssueCls):
 	""" Checks all the lines in a commit for strings matching our regex"""
@@ -59,17 +74,8 @@ def checkCommit(rev,IssueCls):
 		# Deleting a ref...
 		return
 	commit = repo.commit(newRev)
-	for line in commit.message.split("\n"):
-		match = regex.match(line)
-		if match:
-			status = match.group(1)
-			numbers = match.group(3)
-			# Fetch a list of issues from the regex and clean them up
-			issueNumbers = [num for num in numbers.replace("#","").replace(" ",",").split(",") if num]
-			for issueNumber in issueNumbers:
-				issue = Issue.find(issueNumber)
-				if issue:
-					handleMatchingIssue(issue, commit)
+	processMessage(commit.message, IssueCls)
+
 					
 if __name__ == "__main__":
 	import argparse
@@ -89,7 +95,7 @@ if __name__ == "__main__":
 		sys.exit(1)
 		
 	class Issue(ActiveResource):
-	 	_site = options['url']	
+		_site = options['url']	
 		_user = options['username']
 		_password = options['password']
 		
