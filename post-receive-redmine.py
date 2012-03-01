@@ -53,8 +53,8 @@ def handleMatchingIssue(issue, commit):
 	issue.status_id = 3 # Set to resolved.
 	issue.save()
 
-def processMessage(message, IssueCls, dryRun=False):
-	for line in message.split("\n"):
+def processMessage(commit, IssueCls, dryRun=False):
+	for line in commit.message.split("\n"):
 		match = regex.search(line)
 		if match:
 			status = match.group(1)
@@ -74,7 +74,7 @@ def checkCommit(rev,IssueCls):
 		# Deleting a ref...
 		return
 	commit = repo.commit(newRev)
-	processMessage(commit.message, IssueCls)
+	processMessage(commit, IssueCls)
 
 					
 if __name__ == "__main__":
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 	parser.add_argument('--git-dir', type=str, 
 						help="Path to the git repo.  This is optional if GIT_DIR is defined in the environment")
 	options = vars(parser.parse_args())
-	gitDir = options.get('git-dir',os.environ.get('GIT_DIR'))
+	gitDir = options.get('git_dir',os.environ.get('GIT_DIR'))
 	if not gitDir:
 		print "Missing git-dir parameter, and no GIT_DIR environment variable was available either."
 		sys.exit(1)
