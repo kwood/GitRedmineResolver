@@ -1,0 +1,25 @@
+#!/bin/sh
+export GIT_DIR
+COMMITS=''
+
+# for each ref that was updated during the push
+while read OLD_REV NEW_REV REF_NAME; do
+  OLD_REV="`git rev-parse $OLD_REV`"
+  NEW_REV="`git rev-parse $NEW_REV`"
+  if expr "$OLD_REV" : '0*$' >/dev/null; then
+    # if the branch was created, add all revisions in the new branch; skip tags
+    if ! expr "$REF_NAME" : 'refs/tags/' >/dev/null; then
+      REF_REV="`git rev-parse $REF_NAME`"
+      REF_NAME="`git name-rev --name-only $REF_REV`"
+      COMMITS="$COMMITS `git rev-list $REF_NAME | git name-rev --stdin | grep -G \($REF_NAME.*\) | awk '{ print $1 }'`"
+    fi
+
+  elif expr "$NEW_REV" : '0*$' >/dev/null; then
+    # don't think branch deletes ever hit a post-receive hook, so we should never get here
+    printf ''
+  else
+    # add any commits in this push
+    COMMITS="$COMMITS `git rev-parse --not --all | grep -v $(git rev-parse $REF_NAME) | git rev-list --reverse --stdin $(git merge-base $OLD_REV $NEW_REV)..$NEW_REV`"
+  fi
+done
+echo $COMMITS | tr ' ' '\n' | python /var/lib/gitredmine/GitRedmineResolver/post-receive-redmine.py --git-dir=$GIT_DIR http://url.to.redmin/ username password
