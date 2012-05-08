@@ -37,7 +37,7 @@ regex = re.compile(restring, re.I)
 #   0a3bf385b261cb71e176ef758c37e94639901e2d 9d3a264654c1b26f4111276d42a83a2ac4626106 refs/heads/master
 def commits():
 	for sLine in iter(sys.stdin.readline, ""):
-	  yield sLine.strip().split(" ")
+	  yield sLine.strip()
 
 
 def quotifyString(str):
@@ -101,5 +101,5 @@ if __name__ == "__main__":
 		
 	repo = git.Repo(gitDir)
 	for commit in commits():
-		oldRev, newRev, ref = commit
+		newRev = commit
 		checkCommit(newRev, Issue)
