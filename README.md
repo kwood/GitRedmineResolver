@@ -34,10 +34,9 @@ You have python and setuptools installed, and you should already have your repos
 Install
 -------
 
-1. Install the dependencies
+1. Install the dependencies (pyactiveresource and gitpython)
 
-		easy_install pyactiveresource
-		easy_install gitpython
+		pip install -r requirements.txt
 	
 	
 2. Clone GitRedmineResolver somewhere
@@ -52,9 +51,8 @@ Install
 
 4. Set up the post-receive hook in your repository that calls GitRedmineResolver and passes stdin to it:
 
-	Put the following in a file called post-receive inside the hooks directory in your repo:
+	Move the post-receive file into your hook directory and make sure to edit the information so it matches you.
+	Clarification: this hook directory is where you are pushing to, whether you set up a local repo or one on our servers.
+	In the hooks folder after creating or moving the post-receive file there, run this.
 
-		#!/bin/sh
-		export GIT_DIR
-		python /var/lib/gitredmine/GitRedmineResolver/post-receive-redmine.py http://url.to.redmine/ username password --git-dir=$GIT_DIR <&0`
-		
+		chmod +x post-receive
