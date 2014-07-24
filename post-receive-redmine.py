@@ -22,7 +22,12 @@ Legal
 import os
 # XXX Figure out how to pass an API key to ActiveResource instead of login
 
-restring = r'(resolves|resolved|fixes|fixed)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+# Regex for resolved issues or merges
+restring = r'(merge|merged|merging|resolves|resolved|fixes|fixed)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+# Regex for in progress issues or commits
+cstring = r'(in progress|commit|committed|committing|working|working on|worked on|doing|did|continuing)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+# Regex for feedback stage or pull requests
+prstring = r'(pull request|pull requested|pr|feedback|feedback for)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
 
 from pyactiveresource.activeresource import ActiveResource
 import git
@@ -30,6 +35,8 @@ import re
 import sys
 
 regex = re.compile(restring, re.I)
+cregex = re.compile(cstring, re.I)
+prregex = re.compile(prstring, re.I)
 
 
 # This generator reads lines from SDTIN and returns them as 3-item lists
@@ -47,18 +54,36 @@ def quotifyString(str):
     return "\n".join(["> "+ line for line in str.split("\n")])
 
 
-def handleMatchingIssue(issue, commit):
+def handleMatchingIssue(issue, commit, new_status):
     quotedMessage = quotifyString(commit.message)
-    issue.notes = "Resolved by _%s_ in revision: commit:%s\n\n%s" % (commit.author.name, commit.hexsha, quotedMessage)
-    issue.status_id = 3 # Set to resolved.
+    if new_status == 3:
+        issue_word = "Resolved by "
+    elif new_status == 2:
+        issue_word = "In progress by "
+    else:
+        issue_word = "Feedback for "
+    issue.notes = issue_word + "_%s_ in revision: commit:%s\n\n%s" % (commit.author.name, commit.hexsha, quotedMessage)
+    issue.status_id = new_status # Set to resolved/in progress/feedback.
     issue.save()
 
 def processMessage(commit, IssueCls, dryRun=False):
     for line in commit.message.split("\n"):
         match = regex.search(line)
-        if match:
-            status = match.group(1)
-            numbers = match.group(3)
+        cmatch = cregex.search(line)
+        prmatch = prregex.search(line)
+        if match or cmatch or prmatch:
+            if match:
+                new_status = 3
+                status = match.group(1)
+                numbers = match.group(3)
+            elif cmatch:
+                new_status = 2
+                status = cmatch.group(1)
+                numbers = cmatch.group(3)
+            else:
+                new_status = 4
+                status = prmatch.group(1)
+                numbers = prmatch.group(3)
             # Fetch a list of issues from the regex and clean them up
             issueNumbers = [num for num in numbers.replace("#","").replace(" ",",").split(",") if num]
             for issueNumber in issueNumbers:
@@ -66,7 +91,7 @@ def processMessage(commit, IssueCls, dryRun=False):
                 if dryRun and issue:
                     print "Matched!"
                 if issue and not dryRun:
-                    handleMatchingIssue(issue, commit)
+                    handleMatchingIssue(issue, commit, new_status)
 
 def checkCommit(rev,IssueCls):
     """ Checks all the lines in a commit for strings matching our regex"""
