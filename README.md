@@ -3,37 +3,49 @@ GitRedmineResolver
 
 Description
 -----------
-GitRedmineResolver is a git _post-receive_ hook that will scan commit messages for messages in the form of "Resolves issue #294", and will update the corresponding issue in your Redmine system.
+GitRedmineResolver is a git _post-receive_ hook that will scan commit messages for messages in the form of "Resolves issue #294" and active branch names in the form of "3737_any_text_is_fine", and will update the corresponding issue in your Redmine system.
 
 How it works
 ------------
 
-GitRedmineResolver will scan commit messages after you push for strings in the form of:
+GitRedmineResolver will scan your active branch name for the GUIDER issue number and commit for a verb specifying your action in the form of:
 
-(Resolving verb) (optional issue type noun) (comma or space separated list of issue numbers)
+commit text that isn't required ... (Action verb) ... commit text that isn't required
 
-The verbs we look for merging/resolving are merge, merged, merging, resolves, resolved, fixes, fixed.
-The verbs we look for in progress/commits are in progress, commit, committed, committing, working, working on, worked on, doing, did, continuing.
-The verbs we look for feedback/pull requests are pull request, pull requested, pr, feedback, feedback for.
+However if your branch does not have an issue number in it, GitRedmineResolver will scan your commit messages after you push for strings in the form of:
+
+(Action verb) (optional issue type noun) (comma or space separated list of issue numbers)
+
+The verbs we look for for marking issues as "resolved" are merge, merged, merging, resolve, resolves, resolved, fix, fixes, fixed.
+The verbs we look for for marking issues as "in progress" are in progress, commit, committed, committing, working, working on, worked on, doing, did, continuing, continued, continue.
+The verbs we look for for marking issues as "feedback" are pull request, pull requested, pr, feedback, feedback for.
 The issue nouns are issue,task,feature, and bug
 Issue numbers can be singular, or comma or space separated.  Hash signs are safe to use but optional.
+If you name your branch with an issue number, just use one uninterrupted number.
 
-Examples of matching strings for merging/resolving:
+Examples of branch names:
+* 3444_bug_fix
+* issue_2342
+* 4567
+
+Examples of matching strings for resolving:
 * Resolves issue #142
 * Fixes bug 148
 * Merged feature #123 456 789
 
-Examples of matching strings for in progress/commits:
+Examples of matching strings for in progress:
 * In progress issue #142
 * Committed bug 148
 * Working feature #123 456 789
 
-Examples of matching strings for feedback/pull requests:
+Examples of matching strings for feedback:
 * Pull requested issue #142
 * Feedback for bug 148
 * Feedback feature #123 456 789
 
-GitRedmineResolver will then resolve and add a comments to the corresponding issues, with a link to the commit in the Redmine repository browser.  It would be trivial to extend this script to accept more verbs that take different actions in Redmine (e.g., close issues), but since this is not part of our workflow that exercise is left to the reader.
+Note: if you name your active branch with the issue number, you will only need to use the action verbs in the above examples.
+
+GitRedmineResolver will then resolve and add a comment to the corresponding issues, with a link to the commit in the Redmine repository browser.  It would be trivial to extend this script to accept more verbs that take different actions in Redmine (e.g., close issues), but since this is not part of our workflow that exercise is left to the reader.
 
 
 Dependencies
@@ -47,8 +59,8 @@ Install
 1. Install the dependencies (pyactiveresource and gitpython)
 
 		pip install -r requirements.txt
-	
-	
+
+
 2. Clone GitRedmineResolver somewhere
 
 		cd /var/lib

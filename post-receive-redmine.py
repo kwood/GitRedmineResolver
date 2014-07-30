@@ -23,11 +23,11 @@ import os
 # XXX Figure out how to pass an API key to ActiveResource instead of login
 
 # Regex for resolved issues or merges
-restring = r'(merge|merged|merging|resolve|resolves|resolved|fixes|fixed)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+restring = r'(merge|merged|merging|resolve|resolves|resolved|fix|fixes|fixed)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
 # Regex for resolved issues or merges when branch has issue number
-restring1 = r'(merge|merged|merging|resolve|resolves|resolved|fixes|fixed)'
+restring1 = r'(merge|merged|merging|resolve|resolves|resolved|fix|fixes|fixed)'
 # Regex for in progress issues or commits
-cstring = r'(in progress|commit|committed|committing|working|working on|worked on|doing|did|continuing)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+cstring = r'(in progress|commit|committed|committing|working|working on|worked on|doing|did|continuing|continued|continue)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
 # Regex for in progress issues or commits when branch has issue number
 cstring1 = r'(in progress|commit|committed|committing|working|working on|worked on|work on|doing|did|continuing|continued|continue)'
 # Regex for feedback stage or pull requests
@@ -79,7 +79,7 @@ def handleMatchingIssue(issue, commit, new_status):
     issue.save()
 
 def processMessage(commit, IssueCls, dryRun=False):
-    branchmatch = branchregex.search(branch.name)
+    branchmatch = branchregex.search(branch)
     for line in commit.message.split("\n"):
         # Accesses different commits depending on if branch held issue number
         if branchmatch:
@@ -135,6 +135,8 @@ if __name__ == "__main__":
                         help="The Redmine username to log in with.  Needs permissions to resolve and comment on issues.")
     parser.add_argument('password', type=str,
                         help="The Redmine password to log in with.")
+    parser.add_argument('branch', type=str,
+                        help="The current active branch.")
     parser.add_argument('--git-dir', type=str,
                         help="Path to the git repo.  This is optional if GIT_DIR is defined in the environment")
     options = vars(parser.parse_args())
@@ -149,8 +151,8 @@ if __name__ == "__main__":
         _password = options['password']
 
     repo = git.Repo(gitDir)
-    # Not working, active branch is always master
-    branch = repo.active_branch
+    # Grab active branch from bash script
+    branch = options['branch'].split('/')[-1]
     for commit in commits():
         newRev = commit
         checkCommit(newRev, Issue)
