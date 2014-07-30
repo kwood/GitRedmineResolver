@@ -23,11 +23,19 @@ import os
 # XXX Figure out how to pass an API key to ActiveResource instead of login
 
 # Regex for resolved issues or merges
-restring = r'(merge|merged|merging|resolves|resolved|fixes|fixed)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+restring = r'(merge|merged|merging|resolve|resolves|resolved|fixes|fixed)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+# Regex for resolved issues or merges when branch has issue number
+restring1 = r'(merge|merged|merging|resolve|resolves|resolved|fixes|fixed)'
 # Regex for in progress issues or commits
 cstring = r'(in progress|commit|committed|committing|working|working on|worked on|doing|did|continuing)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+# Regex for in progress issues or commits when branch has issue number
+cstring1 = r'(in progress|commit|committed|committing|working|working on|worked on|work on|doing|did|continuing|continued|continue)'
 # Regex for feedback stage or pull requests
 prstring = r'(pull request|pull requested|pr|feedback|feedback for)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
+# Regex for feedback stage or pull requests when branch has issue number
+prstring1 = r'(pull request|pull requested|pr|feedback|feedback for)'
+# Check to see if issue number is in the branch name
+branchstring = r'([0-9]+)'
 
 from pyactiveresource.activeresource import ActiveResource
 import git
@@ -37,6 +45,10 @@ import sys
 regex = re.compile(restring, re.I)
 cregex = re.compile(cstring, re.I)
 prregex = re.compile(prstring, re.I)
+regex1 = re.compile(restring1, re.I)
+cregex1 = re.compile(cstring1, re.I)
+prregex1 = re.compile(prstring1, re.I)
+branchregex = re.compile(branchstring, re.I)
 
 
 # This generator reads lines from SDTIN and returns them as 3-item lists
@@ -67,23 +79,35 @@ def handleMatchingIssue(issue, commit, new_status):
     issue.save()
 
 def processMessage(commit, IssueCls, dryRun=False):
+    branchmatch = branchregex.search(branch.name)
     for line in commit.message.split("\n"):
-        match = regex.search(line)
-        cmatch = cregex.search(line)
-        prmatch = prregex.search(line)
+        # Accesses different commits depending on if branch held issue number
+        if branchmatch:
+            match = regex1.search(line)
+            cmatch = cregex1.search(line)
+            prmatch = prregex1.search(line)
+            numbers = branchmatch.group(1)
+        else:
+            match = regex.search(line)
+            cmatch = cregex.search(line)
+            prmatch = prregex.search(line)
         if match or cmatch or prmatch:
             if match:
                 new_status = 3
                 status = match.group(1)
-                numbers = match.group(3)
+                # Grabs issue number from commit if not in branch
+                if not branchmatch:
+                    numbers = match.group(3)
             elif cmatch:
                 new_status = 2
                 status = cmatch.group(1)
-                numbers = cmatch.group(3)
+                if not branchmatch:
+                    numbers = cmatch.group(3)
             else:
                 new_status = 4
                 status = prmatch.group(1)
-                numbers = prmatch.group(3)
+                if not branchmatch:
+                    numbers = prmatch.group(3)
             # Fetch a list of issues from the regex and clean them up
             issueNumbers = [num for num in numbers.replace("#","").replace(" ",",").split(",") if num]
             for issueNumber in issueNumbers:
@@ -125,6 +149,8 @@ if __name__ == "__main__":
         _password = options['password']
 
     repo = git.Repo(gitDir)
+    # Not working, active branch is always master
+    branch = repo.active_branch
     for commit in commits():
         newRev = commit
         checkCommit(newRev, Issue)
