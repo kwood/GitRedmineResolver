@@ -23,19 +23,9 @@ import os
 # XXX Figure out how to pass an API key to ActiveResource instead of login
 
 # Regex for resolved issues or merges
-restring = r'(merge|merged|merging|resolve|resolves|resolved|fix|fixes|fixed)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
-# Regex for resolved issues or merges when branch has issue number
-restring1 = r'(merge|merged|merging|resolve|resolves|resolved|fix|fixes|fixed)'
+restring = r'(merge|merged|merging|resolve|resolves|resolved|fix|fixes|fixed|close|closed|closing|done|finish|finishing|finished)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
 # Regex for in progress issues or commits
-cstring = r'(in progress|commit|committed|committing|working|working on|worked on|doing|did|continuing|continued|continue)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
-# Regex for in progress issues or commits when branch has issue number
-cstring1 = r'(in progress|commit|committed|committing|working|working on|worked on|work on|doing|did|continuing|continued|continue)'
-# Regex for feedback stage or pull requests
-prstring = r'(pull request|pull requested|pr|feedback|feedback for)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
-# Regex for feedback stage or pull requests when branch has issue number
-prstring1 = r'(pull request|pull requested|pr|feedback|feedback for)'
-# Check to see if issue number is in the branch name
-branchstring = r'([0-9]+)'
+cstring = r'(start|started|starting|in progress|commit|committed|committing|working|working on|worked on|doing|did|continuing|continued|continue)\s?(issue|task|feature|bug)?s?\s?([#\d, ]+)'
 
 from pyactiveresource.activeresource import ActiveResource
 import git
@@ -44,11 +34,6 @@ import sys
 
 regex = re.compile(restring, re.I)
 cregex = re.compile(cstring, re.I)
-prregex = re.compile(prstring, re.I)
-regex1 = re.compile(restring1, re.I)
-cregex1 = re.compile(cstring1, re.I)
-prregex1 = re.compile(prstring1, re.I)
-branchregex = re.compile(branchstring, re.I)
 
 
 # This generator reads lines from SDTIN and returns them as 3-item lists
@@ -73,41 +58,28 @@ def handleMatchingIssue(issue, commit, new_status):
     elif new_status == 2:
         issue_word = "In progress by "
     else:
-        issue_word = "Feedback for "
+        issue_word = "Closed by "
     issue.notes = issue_word + "_%s_ in revision: commit:%s\n\n%s" % (commit.author.name, commit.hexsha, quotedMessage)
     issue.status_id = new_status # Set to resolved/in progress/feedback.
     issue.save()
 
 def processMessage(commit, IssueCls, dryRun=False):
-    branchmatch = branchregex.search(branch)
     for line in commit.message.split("\n"):
         # Accesses different commits depending on if branch held issue number
-        if branchmatch:
-            match = regex1.search(line)
-            cmatch = cregex1.search(line)
-            prmatch = prregex1.search(line)
-            numbers = branchmatch.group(1)
-        else:
-            match = regex.search(line)
-            cmatch = cregex.search(line)
-            prmatch = prregex.search(line)
-        if match or cmatch or prmatch:
+        match = regex.search(line)
+        cmatch = cregex.search(line)
+        if match or cmatch:
             if match:
-                new_status = 3
+                if branch == "master":
+                    new_status = 5
+                else:
+                    new_status = 3
                 status = match.group(1)
-                # Grabs issue number from commit if not in branch
-                if not branchmatch:
-                    numbers = match.group(3)
-            elif cmatch:
+                numbers = match.group(3)
+            else:
                 new_status = 2
                 status = cmatch.group(1)
-                if not branchmatch:
-                    numbers = cmatch.group(3)
-            else:
-                new_status = 4
-                status = prmatch.group(1)
-                if not branchmatch:
-                    numbers = prmatch.group(3)
+                numbers = cmatch.group(3)
             # Fetch a list of issues from the regex and clean them up
             issueNumbers = [num for num in numbers.replace("#","").replace(" ",",").split(",") if num]
             for issueNumber in issueNumbers:
@@ -153,6 +125,7 @@ if __name__ == "__main__":
     repo = git.Repo(gitDir)
     # Grab active branch from bash script
     branch = options['branch'].split('/')[-1]
+    print(branch)
     for commit in commits():
         newRev = commit
         checkCommit(newRev, Issue)
