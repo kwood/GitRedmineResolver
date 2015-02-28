@@ -3,27 +3,30 @@ GitRedmineResolver
 
 Description
 -----------
-GitRedmineResolver is a git _post-receive_ hook that will scan commit messages for messages in the form of "Resolves issue #294", and will update the corresponding issue in your Redmine system.
+GitRedmineResolver is a git _post-receive_ hook that will scan commit messages for messages in the form of "Resolves issue #294" and will update the corresponding issue in your Redmine system.
 
 How it works
 ------------
 
-GitRedmineResolver will scan commit messages for strings in the form of:
+GitRedmineResolver will scan your commit messages after you push for strings in the form of:
 
-(Resolving verb) (optional issue type noun) (comma or space separated list of issue numbers)
+(Action verb) (optional issue type noun) (comma or space separated list of issue numbers)
 
-The verbs we look for are resolves/resolved and fixes/fixed.
-The issue nouns are issue,task,feature, and bug
+The verbs we look for for marking issues as "resolved" are merge, merged, merging, resolve, resolves, resolved, fix, fixes, fixed, close, closed, closing, done, finish, finishing, finished.
+The verbs we look for for marking issues as "in progress" are in progress, commit, committed, committing, working, working on, worked on, doing, did, continuing, continued, continue, start, started, starting.
 Issue numbers can be singular, or comma or space separated.  Hash signs are safe to use but optional.
 
-Examples of matching strings:
-
-* Resolves issue #142
+Examples of matching strings for resolving:
+* Resolves #142
 * Fixes bug 148
-* Fixed bugs 123 456 789
-* Resolved #124 #456 #789
+* Merged feature #123 456 789
 
-GitRedmineResolver will then resolve and add a comments to the corresponding issues, with a link to the commit in the Redmine repository browser.  It would be trivial to extend this script to accept more verbs that take different actions in Redmine (e.g., close issues), but since this is not part of our workflow that exercise is left to the reader.
+Examples of matching strings for in progress:
+* In progress issue #142
+* Committed bug 148
+* Working feature #123 456 789
+
+GitRedmineResolver will then resolve and add a comment to the corresponding issues, with a link to the commit in the Redmine repository browser.  If you use a resolving verb and issue number while the active branch is master, the bridge will close your issue rather than just marking it as resolved, assuming that you are done.
 
 
 Dependencies
@@ -34,12 +37,11 @@ You have python and setuptools installed, and you should already have your repos
 Install
 -------
 
-1. Install the dependencies
+1. Install the dependencies (pyactiveresource and gitpython)
 
-		easy_install pyactiveresource
-		easy_install gitpython
-	
-	
+		pip install -r requirements.txt
+
+
 2. Clone GitRedmineResolver somewhere
 
 		cd /var/lib
@@ -52,9 +54,8 @@ Install
 
 4. Set up the post-receive hook in your repository that calls GitRedmineResolver and passes stdin to it:
 
-	Put the following in a file called post-receive inside the hooks directory in your repo:
+	Move the post-receive file into your hook directory and make sure to edit the information so it matches you.
+	Clarification: this hook directory is where you are pushing to, whether you set up a local repo or one on our servers.
+	In the hooks folder after creating or moving the post-receive file there, run this.
 
-		#!/bin/sh
-		export GIT_DIR
-		python /var/lib/gitredmine/GitRedmineResolver/post-receive-redmine.py http://url.to.redmine/ username password --git-dir=$GIT_DIR <&0`
-		
+		chmod +x post-receive

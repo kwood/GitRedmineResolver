@@ -4,6 +4,7 @@ COMMITS=''
 
 # for each ref that was updated during the push
 while read OLD_REV NEW_REV REF_NAME; do
+  ACTIVE_BRANCH=$REF_NAME
   OLD_REV="`git rev-parse $OLD_REV`"
   NEW_REV="`git rev-parse $NEW_REV`"
   if expr "$OLD_REV" : '0*$' >/dev/null; then
@@ -22,4 +23,4 @@ while read OLD_REV NEW_REV REF_NAME; do
     COMMITS="$COMMITS `git rev-parse --not --all | grep -v $(git rev-parse $REF_NAME) | git rev-list --reverse --stdin $(git merge-base $OLD_REV $NEW_REV)..$NEW_REV`"
   fi
 done
-echo $COMMITS | tr ' ' '\n' | python /var/lib/gitredmine/GitRedmineResolver/post-receive-redmine.py --git-dir=$GIT_DIR http://url.to.redmin/ username password
+echo $COMMITS | tr ' ' '\n' | python /var/lib/gitredmine/GitRedmineResolver/post-receive-redmine.py --git-dir=$GIT_DIR http://url.to.redmin/ username password $ACTIVE_BRANCH
